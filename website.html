@@ -1,0 +1,1658 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data to Dimensions - 3D GeoJSON Workshop</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            line-height: 1.7;
+        }
+
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+        }
+
+        h1 {
+            font-size: 4.5rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 1.5rem;
+            text-shadow: 2px 2px 20px rgba(0, 0, 0, 0.2);
+            letter-spacing: -1px;
+        }
+
+        .hero-subtitle {
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.95);
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .hero-motivation {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.85);
+            font-style: italic;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0;
+            background: white;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            background: #1e3a8a;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-button {
+            padding: 1.5rem 3rem;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .tab-button:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab-button.active {
+            color: white;
+            border-bottom: 3px solid #60a5fa;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 4rem 2rem;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .contest-banner {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            padding: 3rem 2rem;
+            text-align: center;
+            color: white;
+            border-bottom: 4px solid #1e40af;
+        }
+
+        .contest-banner h2 {
+            font-size: 2.8rem;
+            margin-bottom: 1rem;
+            font-weight: 800;
+        }
+
+        .prize {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin: 1rem 0;
+            color: #fef08a;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .deadline {
+            background: rgba(255, 255, 255, 0.25);
+            display: inline-block;
+            padding: 0.75rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            margin-top: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .section {
+            margin-bottom: 4rem;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .section h2 {
+            font-size: 2.5rem;
+            color: #1e40af;
+            margin-bottom: 2rem;
+            font-weight: 700;
+            border-left: 6px solid #3b82f6;
+            padding-left: 1.5rem;
+        }
+
+        .section h3 {
+            font-size: 1.8rem;
+            color: #1e3a8a;
+            margin: 2.5rem 0 1.5rem;
+            font-weight: 700;
+        }
+
+        .concept-card {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            padding: 2.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border-left: 5px solid #3b82f6;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .concept-card h4 {
+            color: #1e40af;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .concept-card p {
+            font-size: 1.05rem;
+            color: #334155;
+            margin-bottom: 1rem;
+        }
+
+        .example-box {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 3px solid #60a5fa;
+            margin-top: 1rem;
+            color: #475569;
+        }
+
+        .example-box strong {
+            color: #1e40af;
+        }
+
+        .visual-diagram {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+            border: 2px solid #bfdbfe;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .diagram-content {
+            background: linear-gradient(135deg, #eff6ff, #dbeafe);
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .diagram-title {
+            color: #1e40af;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .flow-box {
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            border: 2px solid #3b82f6;
+            font-weight: 600;
+            color: #1e40af;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: #3b82f6;
+            font-weight: bold;
+        }
+
+        .step {
+            background: #f8fafc;
+            padding: 2.5rem;
+            border-radius: 12px;
+            margin-bottom: 2.5rem;
+            border: 2px solid #e0e7ff;
+            transition: all 0.3s;
+        }
+
+        .step:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.3rem;
+            margin-right: 1.5rem;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+            flex-shrink: 0;
+        }
+
+        .step h3 {
+            margin: 0;
+            color: #1e3a8a;
+            font-size: 1.6rem;
+        }
+
+        .code-container {
+            position: relative;
+            margin: 1.5rem 0;
+        }
+
+        .copy-button {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            z-index: 10;
+        }
+
+        .copy-button:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+
+        .copy-button.copied {
+            background: #10b981;
+        }
+
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            padding-top: 3.5rem;
+            border-radius: 10px;
+            overflow-x: auto;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        code {
+            font-family: 'Fira Code', monospace;
+            background: #e0e7ff;
+            color: #1e40af;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .explanation {
+            background: #fef3c7;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .explanation h5 {
+            color: #92400e;
+            margin-bottom: 0.8rem;
+            font-size: 1.1rem;
+        }
+
+        .explanation p {
+            color: #78350f;
+            margin-bottom: 0.5rem;
+        }
+
+        .keyword {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-weight: 600;
+        }
+
+        .contest-rules {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            padding: 2.5rem;
+            border-radius: 12px;
+            margin: 2rem 0;
+            border: 2px solid #93c5fd;
+        }
+
+        .contest-rules h3 {
+            color: #1e3a8a;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+        }
+
+        .contest-rules ol {
+            margin-left: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .contest-rules li {
+            margin-bottom: 1rem;
+            font-size: 1.05rem;
+            color: #1e3a8a;
+        }
+
+        .instructor {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            padding: 3rem;
+            border-radius: 12px;
+            margin: 3rem 0;
+            box-shadow: 0 8px 24px rgba(30, 64, 175, 0.3);
+        }
+
+        .instructor h2 {
+            color: white;
+            margin-bottom: 1.5rem;
+            border: none;
+            padding: 0;
+        }
+
+        .instructor-name {
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .instructor-title {
+            font-size: 1.1rem;
+            margin-bottom: 0.3rem;
+            opacity: 0.95;
+        }
+
+        .social-link {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: white;
+            color: #1e40af;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            margin-top: 1.5rem;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .social-link:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .file-path {
+            background: #1e40af;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin: 1rem 0;
+            font-weight: 600;
+        }
+
+        .resources {
+            background: #f1f5f9;
+            padding: 2.5rem;
+            border-radius: 12px;
+            margin-top: 3rem;
+            border: 2px solid #cbd5e1;
+        }
+
+        .resources h3 {
+            color: #1e3a8a;
+            margin-bottom: 1.5rem;
+        }
+
+        .resources a {
+            color: #3b82f6;
+            text-decoration: none;
+            font-weight: 600;
+            display: block;
+            margin: 0.8rem 0;
+            transition: all 0.3s;
+            font-size: 1.05rem;
+        }
+
+        .resources a:hover {
+            color: #1e40af;
+            transform: translateX(8px);
+        }
+
+        footer {
+            background: #1e293b;
+            color: white;
+            text-align: center;
+            padding: 2.5rem;
+        }
+
+        footer a {
+            color: #60a5fa;
+            text-decoration: none;
+        }
+
+        .data-format-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .format-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border: 2px solid #bfdbfe;
+            transition: all 0.3s;
+        }
+
+        .format-card:hover {
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .format-card h5 {
+            color: #1e40af;
+            font-size: 1.2rem;
+            margin-bottom: 0.8rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.8rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1.2rem;
+            }
+
+            .tab-button {
+                padding: 1rem 1.5rem;
+                font-size: 1rem;
+            }
+
+            .contest-banner h2 {
+                font-size: 2rem;
+            }
+
+            .prize {
+                font-size: 2.5rem;
+            }
+
+            .flow-diagram {
+                flex-direction: column;
+            }
+
+            .flow-arrow {
+                transform: rotate(90deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="hero">
+        <div class="hero-content">
+            <h1>📊 Data to Dimensions</h1>
+            <p class="hero-subtitle">Transform GeoJSON Data into Stunning 3D Visualizations</p>
+            <p class="hero-motivation">"Every dataset has a story. Let's bring it to life in three dimensions and make
+                data dance before your eyes."</p>
+        </div>
+    </div>
+
+    <div class="contest-banner">
+        <h2>🎉 Workshop Contest 🎉</h2>
+        <div class="prize">Win ₹100!</div>
+        <p style="font-size: 1.2rem; margin: 1rem 0;">Build the most creative 3D data visualization using React &
+            Three.js</p>
+        <div class="deadline">⏰ Deadline: Monday, 6 PM</div>
+    </div>
+
+    <div class="container">
+        <div class="instructor">
+            <h2>Your Instructor</h2>
+            <div class="instructor-name">Keerthana M G</div>
+            <div class="instructor-title">Backend Development Intern @ HappyFox</div>
+            <div class="instructor-title">Lead @ Codesapiens</div>
+            <div class="instructor-title">Final Year CSE Student @ REC</div>
+            <a href="https://www.linkedin.com/in/keerthana-m-g-12ba59256/" target="_blank" class="social-link">
+                Connect on LinkedIn 🔗
+            </a>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('learning')">📚 Learning</button>
+            <button class="tab-button" onclick="switchTab('implementation')">💻 Implementation</button>
+        </div>
+
+        <div id="learning" class="tab-content active">
+            <div class="section">
+                <h2>Understanding the Fundamentals</h2>
+                <p style="font-size: 1.15rem; color: #475569; margin-bottom: 2rem;">Before we dive into building our 3D
+                    visualizer, let's understand the core technologies and concepts we'll be using. Don't worry - we'll
+                    explain everything in simple terms!</p>
+
+                <div class="concept-card">
+                    <h4>1. React - Building Blocks of Modern Web 🏗️</h4>
+                    <p><strong>What is React?</strong></p>
+                    <p>React is a JavaScript library created by Facebook for building user interfaces. Think of it like
+                        LEGO blocks - you create small, reusable pieces (called components) and combine them to build
+                        complex applications.</p>
+
+                    <div class="example-box">
+                        <strong>Real-world analogy:</strong> Imagine building a house. Instead of building everything
+                        from scratch each time, you have pre-made doors, windows, and walls. In React, these are
+                        "components" - reusable pieces of UI that you can use anywhere in your app!
+                    </div>
+
+                    <p style="margin-top: 1.5rem;"><strong>Key React Concepts You'll Use:</strong></p>
+                    <ul style="margin-left: 1.5rem; color: #334155; line-height: 2;">
+                        <li><span class="keyword">Components</span>: Reusable pieces of UI (like buttons, forms, cards).
+                            Think of them as custom HTML tags.</li>
+                        <li><span class="keyword">Props</span>: Data passed from parent to child components (like
+                            function parameters).</li>
+                        <li><span class="keyword">State</span>: Data that changes over time within a component (like
+                            variables that trigger re-renders).</li>
+                        <li><span class="keyword">Hooks</span>: Special functions that let you use React features
+                            (useState for state, useEffect for side effects).</li>
+                        <li><span class="keyword">JSX</span>: HTML-like syntax in JavaScript. Write
+                            <code>&lt;div&gt;Hello&lt;/div&gt;</code> directly in JS!</li>
+                    </ul>
+                </div>
+
+                <div class="concept-card">
+                    <h4>2. Three.js - The 3D Graphics Engine ✨</h4>
+                    <p><strong>What is Three.js?</strong></p>
+                    <p>Three.js is a powerful JavaScript library that makes it easy to create 3D graphics in web
+                        browsers. It uses WebGL under the hood but provides a much simpler API. Think of it as the
+                        engine that powers 3D visualizations on the web.</p>
+
+                    <div class="example-box">
+                        <strong>You've seen Three.js in action:</strong> Google Maps 3D buildings, interactive product
+                        viewers on e-commerce sites, 3D data visualizations in news articles - all powered by Three.js
+                        or similar libraries!
+                    </div>
+
+                    <p style="margin-top: 1.5rem;"><strong>Core Three.js Building Blocks:</strong></p>
+                    <ul style="margin-left: 1.5rem; color: #334155; line-height: 2;">
+                        <li><span class="keyword">Scene</span>: The 3D world container - like a stage where all your 3D
+                            objects live.</li>
+                        <li><span class="keyword">Camera</span>: Your viewpoint into the scene. Determines what you see
+                            and from which angle.</li>
+                        <li><span class="keyword">Renderer</span>: Takes the scene and camera and draws everything to
+                            the screen.</li>
+                        <li><span class="keyword">Mesh</span>: A 3D object = Geometry (shape) + Material
+                            (appearance/color).</li>
+                        <li><span class="keyword">Geometry</span>: The shape of your object (cube, sphere, or custom
+                            shapes).</li>
+                        <li><span class="keyword">Material</span>: How the surface looks (color, texture, shininess).
+                        </li>
+                        <li><span class="keyword">Light</span>: Illuminates your scene (ambient, directional, point
+                            lights).</li>
+                    </ul>
+                </div>
+
+                <div class="visual-diagram">
+                    <div class="diagram-content">
+                        <div class="diagram-title">Three.js Scene Pipeline</div>
+                        <div class="flow-diagram">
+                            <div class="flow-box">Scene<br />(Stage)</div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-box">Objects<br />(Meshes)</div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-box">Lights<br />(Illumination)</div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-box">Camera<br />(View)</div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-box">Renderer<br />(Draw)</div>
+                            <div class="flow-arrow">→</div>
+                            <div class="flow-box">Screen<br />(Output)</div>
+                        </div>
+                        <p style="margin-top: 1.5rem; color: #475569;">Everything flows from left to right: create
+                            scene, add objects and lights, position camera, render to screen!</p>
+                    </div>
+                </div>
+
+                <div class="concept-card">
+                    <h4>3. React Three Fiber - React Meets Three.js 🎯</h4>
+                    <p><strong>Why React Three Fiber?</strong></p>
+                    <p>Writing Three.js code directly involves a lot of boilerplate and imperative code. React Three
+                        Fiber (@react-three/fiber) is a React renderer for Three.js that lets you build 3D scenes using
+                        React components - making it much more intuitive and maintainable!</p>
+
+                    <div class="example-box">
+                        <strong>The difference:</strong><br />
+                        <strong>Pure Three.js:</strong>
+                        <code>const mesh = new THREE.Mesh(geometry, material); scene.add(mesh);</code><br />
+                        <strong>React Three Fiber:</strong>
+                        <code>&lt;mesh&gt;&lt;boxGeometry /&gt;&lt;meshStandardMaterial /&gt;&lt;/mesh&gt;</code><br />
+                        Much cleaner and more React-like!
+                    </div>
+
+                    <p style="margin-top: 1.5rem;"><strong>Benefits:</strong></p>
+                    <ul style="margin-left: 1.5rem; color: #334155; line-height: 2;">
+                        <li>Write Three.js using familiar React components and JSX</li>
+                        <li>Automatic memory management and cleanup</li>
+                        <li>Use React's state, props, and hooks with 3D objects</li>
+                        <li>Easier to reason about and maintain</li>
+                    </ul>
+                </div>
+
+                <div class="concept-card">
+                    <h4>4. Geographic Data Formats 🗺️</h4>
+                    <p style="font-size: 1.1rem; margin-bottom: 1.5rem;">When working with maps and geographic data,
+                        you'll encounter several data formats. Let's understand each one:</p>
+
+                    <div class="data-format-grid">
+                        <div class="format-card">
+                            <h5>📍 GeoJSON</h5>
+                            <p><strong>What:</strong> JSON format for encoding geographic data structures (points,
+                                lines, polygons).</p>
+                            <p><strong>Use Case:</strong> Web mapping, storing geographic features with properties.</p>
+                            <p><strong>Example:</strong> Building footprints, city boundaries, points of interest.</p>
+                            <code
+                                style="display: block; margin-top: 0.5rem; font-size: 0.85rem;">{"type": "Point", "coordinates": [lon, lat]}</code>
+                        </div>
+
+                        <div class="format-card">
+                            <h5>🗂️ Shapefile</h5>
+                            <p><strong>What:</strong> Popular geospatial vector data format developed by Esri.</p>
+                            <p><strong>Use Case:</strong> GIS software, professional mapping applications.</p>
+                            <p><strong>Note:</strong> Consists of multiple files (.shp, .shx, .dbf). Can be converted to
+                                GeoJSON for web use.</p>
+                        </div>
+
+                        <div class="format-card">
+                            <h5>🌐 KML/KMZ</h5>
+                            <p><strong>What:</strong> XML-based format used by Google Earth.</p>
+                            <p><strong>Use Case:</strong> Google Earth visualizations, sharing geographic data.</p>
+                            <p><strong>Note:</strong> KMZ is compressed KML. Great for complex visualizations with
+                                styling.</p>
+                        </div>
+
+                        <div class="format-card">
+                            <h5>🎨 TopoJSON</h5>
+                            <p><strong>What:</strong> Extension of GeoJSON that encodes topology.</p>
+                            <p><strong>Use Case:</strong> More efficient than GeoJSON for large datasets.</p>
+                            <p><strong>Benefit:</strong> Smaller file sizes, preserves shared boundaries between shapes.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="concept-card">
+                    <h4>5. GeoJSON Deep Dive 📐</h4>
+                    <p>Since we'll be using GeoJSON in our project, let's understand its structure in detail:</p>
+
+                    <p style="margin-top: 1rem;"><strong>Basic GeoJSON Structure:</strong></p>
+                    <div class="code-container">
+                        <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                        <pre>{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[lon1,lat1], [lon2,lat2], [lon3,lat3], [lon1,lat1]]]
+      },
+      "properties": {
+        "name": "Building A",
+        "height": 25,
+        "color": "#ff0000"
+      }
+    }
+  ]
+}</pre>
+                    </div>
+
+                    <p style="margin-top: 1.5rem;"><strong>GeoJSON Geometry Types:</strong></p>
+                    <ul style="margin-left: 1.5rem; color: #334155; line-height: 2;">
+                        <li><span class="keyword">Point</span>: Single location (e.g., a marker on a map)</li>
+                        <li><span class="keyword">LineString</span>: Series of connected points (e.g., a road or path)
+                        </li>
+                        <li><span class="keyword">Polygon</span>: Closed shape with area (e.g., building footprint,
+                            park)</li>
+                        <li><span class="keyword">MultiPoint</span>: Multiple separate points</li>
+                        <li><span class="keyword">MultiLineString</span>: Multiple separate lines</li>
+                        <li><span class="keyword">MultiPolygon</span>: Multiple separate polygons</li>
+                    </ul>
+
+                    <div class="example-box" style="margin-top: 1.5rem;">
+                        <strong>Coordinate Order in GeoJSON:</strong> Always [longitude, latitude] - opposite of what
+                        you might expect! Think "X, Y" where longitude is X (horizontal) and latitude is Y (vertical).
+                    </div>
+                </div>
+
+                <div class="concept-card">
+                    <h4>6. PostGIS - Spatial Database Superpowers 🗄️</h4>
+                    <p><strong>What is PostGIS?</strong></p>
+                    <p>PostGIS is a spatial database extension for PostgreSQL. It adds support for geographic objects,
+                        allowing you to run location-based queries directly in your database. Think of it as a
+                        supercharged PostgreSQL that understands geography!</p>
+
+                    <div class="example-box">
+                        <strong>Why PostGIS matters:</strong> Instead of loading huge geographic datasets into your
+                        application and processing them in JavaScript, you can query and filter them efficiently in the
+                        database. For example, "Find all buildings within 5km of this point" runs instantly on millions
+                        of records!
+                    </div>
+
+                    <p style="margin-top: 1.5rem;"><strong>What PostGIS Can Do:</strong></p>
+                    <ul style="margin-left: 1.5rem; color: #334155; line-height: 2;">
+                        <li>Store geographic data types (points, lines, polygons) natively</li>
+                        <li>Perform spatial queries: distance, intersection, containment</li>
+                        <li>Calculate areas, lengths, and other geometric measurements</li>
+                        <li>Transform between different coordinate systems</li>
+                        <li>Export data as GeoJSON directly from SQL queries</li>
+                    </ul>
+
+                    <div class="example-box" style="margin-top: 1.5rem;">
+                        <strong>Example PostGIS Query:</strong><br />
+                        <code>SELECT *, ST_AsGeoJSON(geometry) FROM buildings WHERE ST_Distance(geometry, ST_MakePoint(lon, lat)) < 1000;</code><br />
+                        This finds all buildings within 1000 meters of a point and exports them as GeoJSON!
+                    </div>
+                </div>
+
+                <div class="concept-card">
+                    <h4>7. Coordinate Reference Systems (CRS) 🌍</h4>
+                    <p><strong>What is a CRS?</strong></p>
+                    <p>A Coordinate Reference System defines how coordinates map to locations on Earth. Since Earth is a
+                        3D sphere but we often work with 2D maps, we need different systems for different purposes.</p>
+
+                    <p style="margin-top: 1.5rem;"><strong>Common CRS You'll Encounter:</strong></p>
+                    <div class="data-format-grid" style="margin-top: 1rem;">
+                        <div class="format-card">
+                            <h5>WGS84 (EPSG:4326)</h5>
+                            <p><strong>Most Common!</strong> Used by GPS, Google Maps, GeoJSON standard.</p>
+                            <p>Coordinates: Latitude/Longitude in degrees</p>
+                            <p>Range: Lat [-90, 90], Lon [-180, 180]</p>
+                        </div>
+
+                        <div class="format-card">
+                            <h5>Web Mercator (EPSG:3857)</h5>
+                            <p>Used by web mapping (Google Maps, OpenStreetMap tiles)</p>
+                            <p>Coordinates: Meters from origin</p>
+                            <p>Good for: Web map tiles</p>
+                        </div>
+
+                        <div class="format-card">
+                            <h5>UTM Zones</h5>
+                            <p>Universal Transverse Mercator - regional projections</p>
+                            <p>Good for: Accurate local measurements</p>
+                            <p>Used in: Surveying, engineering</p>
+                        </div>
+                    </div>
+
+                    <div class="example-box" style="margin-top: 1.5rem;">
+                        <strong>For our project:</strong> We'll use WGS84 (standard GeoJSON) coordinates. Most GeoJSON
+                        data you find online already uses this system!
+                    </div>
+                </div>
+
+                <div class="concept-card">
+                    <h4>8. From 2D to 3D - The Extrusion Process 🏢</h4>
+                    <p><strong>How do we turn flat GeoJSON into 3D buildings?</strong></p>
+                    <p>The process is called "extrusion" - we take a 2D polygon (building footprint) and "pull it up" to
+                        create height. Think of it like pushing cookie dough through a cookie cutter to create 3D
+                        shapes!</p>
+
+                    <div class="visual-diagram">
+                        <div class="diagram-content">
+                            <div class="diagram-title">2D → 3D Extrusion Process</div>
+                            <div class="flow-diagram">
+                                <div class="flow-box">2D Polygon<br />(Footprint)</div>
+                                <div class="flow-arrow">→</div>
+                                <div class="flow-box">Add Height<br />(Property)</div>
+                                <div class="flow-arrow">→</div>
+                                <div class="flow-box">Extrude<br />(Pull Up)</div>
+                                <div class="flow-arrow">→</div>
+                                <div class="flow-box">3D Building<br />(Mesh)</div>
+                            </div>
+                            <p style="margin-top: 1.5rem; color: #475569;">
+                                GeoJSON polygon coordinates [x, y] → THREE.Shape → ExtrudeGeometry with depth → 3D Mesh!
+                            </p>
+                        </div>
+                    </div>
+
+                    <p style="margin-top: 1.5rem;"><strong>The Steps:</strong></p>
+                    <ul style="margin-left: 1.5rem; color: #334155; line-height: 2;">
+                        <li>Read GeoJSON polygon coordinates (array of [lon, lat] points)</li>
+                        <li>Convert to THREE.Shape (2D shape in Three.js)</li>
+                        <li>Use ExtrudeGeometry with a "depth" parameter (this is the height)</li>
+                        <li>Wrap in Material to give it color/texture</li>
+                        <li>Create Mesh and add to Scene</li>
+                    </ul>
+                </div>
+
+                <div class="concept-card">
+                    <h4>9. 3D Visualization Best Practices 🎨</h4>
+                    <p>Creating effective 3D visualizations requires more than just technical knowledge. Here are key
+                        principles:</p>
+
+                    <p style="margin-top: 1.5rem;"><strong>Performance Considerations:</strong></p>
+                    <ul style="margin-left: 1.5rem; color: #334155; line-height: 2;">
+                        <li><span class="keyword">Level of Detail (LOD)</span>: Show simpler geometry when far away,
+                            detailed when close</li>
+                        <li><span class="keyword">Instancing</span>: Reuse geometry for repeated objects (like identical
+                            buildings)</li>
+                        <li><span class="keyword">Culling</span>: Don't render objects outside camera view</li>
+                        <li><span class="keyword">Texture Atlases</span>: Combine multiple textures to reduce draw calls
+                        </li>
+                    </ul>
+
+                    <p style="margin-top: 1.5rem;"><strong>Visual Design:</strong></p>
+                    <ul style="margin-left: 1.5rem; color: #334155; line-height: 2;">
+                        <li><strong>Color Encoding:</strong> Use color to represent data (height, temperature,
+                            population density)</li>
+                        <li><strong>Lighting:</strong> Proper lighting makes 3D depth more obvious - use ambient +
+                            directional lights</li>
+                        <li><strong>Camera Angles:</strong> Default to a 45° angle for best depth perception</li>
+                        <li><strong>Scale:</strong> Keep proportions realistic or your visualization will look wrong
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="concept-card">
+                    <h4>10. Data Sources & Where to Find GeoJSON 📥</h4>
+                    <p>Where can you get GeoJSON data for your visualizations?</p>
+
+                    <div class="data-format-grid" style="margin-top: 1rem;">
+                        <div class="format-card">
+                            <h5>🌐 OpenStreetMap</h5>
+                            <p>Free, crowdsourced map data for the entire world. Export via tools like Overpass API.</p>
+                        </div>
+
+                        <div class="format-card">
+                            <h5>🏛️ Government Data</h5>
+                            <p>Many governments provide free GeoJSON: data.gov, local city portals, census data.</p>
+                        </div>
+
+                        <div class="format-card">
+                            <h5>🛰️ Satellite Providers</h5>
+                            <p>NASA, ESA, and commercial providers offer geographic datasets.</p>
+                        </div>
+
+                        <div class="format-card">
+                            <h5>🔧 Create Your Own</h5>
+                            <p>Use tools like QGIS, geojson.io, or Mapbox Studio to create custom GeoJSON.</p>
+                        </div>
+                    </div>
+
+                    <div class="example-box" style="margin-top: 1.5rem;">
+                        <strong>Pro Tip:</strong> Start with small datasets! A city block is better than an entire city
+                        for learning. You can always scale up later.
+                    </div>
+                </div>
+
+                <div class="resources">
+                    <h3>📖 Additional Learning Resources</h3>
+                    <a href="https://react.dev/learn" target="_blank">→ Official React Documentation</a>
+                    <a href="https://threejs.org/manual/" target="_blank">→ Three.js Fundamentals</a>
+                    <a href="https://docs.pmnd.rs/react-three-fiber/getting-started/introduction" target="_blank">→
+                        React Three Fiber Introduction</a>
+                    <a href="https://geojson.org/" target="_blank">→ GeoJSON Specification</a>
+                    <a href="https://postgis.net/workshops/postgis-intro/" target="_blank">→ PostGIS Tutorial</a>
+                    <a href="https://macwright.com/2015/03/23/geojson-second-bite.html" target="_blank">→ More than you
+                        ever wanted to know about GeoJSON</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="implementation" class="tab-content">
+            <div class="contest-rules">
+                <h3>📋 Contest Rules & Submission Guidelines</h3>
+                <ol>
+                    <li><strong>Build:</strong> Create any 3D data visualization using React and Three.js (GeoJSON, CSV,
+                        JSON - any data format)</li>
+                    <li><strong>Record:</strong> Screen record your working prototype (show the 3D visualization in
+                        action, interactions, rotations)</li>
+                    <li><strong>Publish:</strong> Push your complete code to GitHub (make the repository public)</li>
+                    <li><strong>Share:</strong> Post your screen recording on LinkedIn and tag:
+                        <ul style="margin-top: 0.5rem; margin-left: 1.5rem;">
+                            <li><a href="https://www.linkedin.com/in/keerthana-m-g-12ba59256/" target="_blank"
+                                    style="color: #1e40af; font-weight: 700;">Keerthana M G</a></li>
+                            <li>AT Speaks LinkedIn page</li>
+                        </ul>
+                    </li>
+                    <li><strong>Win:</strong> The most creative visualization wins ₹100! 🏆</li>
+                </ol>
+                <p style="margin-top: 1.5rem; font-weight: 600; color: #1e3a8a;">Evaluation Criteria: Visual creativity,
+                    interactivity, code quality, innovation, and presentation!</p>
+            </div>
+
+            <div class="section">
+                <h2>Step-by-Step Implementation Guide</h2>
+                <p style="font-size: 1.1rem; color: #475569; margin-bottom: 2rem;">Now let's build our 3D GeoJSON
+                    visualizer! Follow each step carefully, copy the code, and paste it into VSCode. Each code block has
+                    a copy button for your convenience.</p>
+
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">1</span>
+                        <h3>Project Setup</h3>
+                    </div>
+                    <p>First, we'll create a new React project using Vite (a fast build tool) and install the necessary
+                        dependencies.</p>
+
+                    <div class="code-container">
+                        <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                        <pre>npm create vite@latest geo3d-visualizer -- --template react
+cd geo3d-visualizer
+npm install
+npm install three @react-three/fiber @react-three/drei</pre>
+                    </div>
+
+                    <div class="explanation">
+                        <h5>🔍 What does this do?</h5>
+                        <p><span class="keyword">npm create vite@latest</span>: Creates a new Vite project (fast
+                            development server)</p>
+                        <p><span class="keyword">--template react</span>: Uses React template (sets up React for us)</p>
+                        <p><span class="keyword">three</span>: The core Three.js library for 3D graphics</p>
+                        <p><span class="keyword">@react-three/fiber</span>: React renderer for Three.js (lets us use
+                            React components)</p>
+                        <p><span class="keyword">@react-three/drei</span>: Helper components (OrbitControls, Camera
+                            helpers, etc.)</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">2</span>
+                        <h3>Replace App.jsx</h3>
+                    </div>
+                    <span class="file-path">src/App.jsx</span>
+                    <p>This is our main application component. It's the root of our React app.</p>
+
+                    <div class="code-container">
+                        <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                        <pre>import Scene from './components/Scene';
+
+function App() {
+  return (
+    &lt;div&gt;
+      &lt;h1&gt;Geo3D Visualizer&lt;/h1&gt;
+      &lt;Scene /&gt;
+    &lt;/div&gt;
+  );
+}
+
+export default App;</pre>
+                    </div>
+
+                    <div class="explanation">
+                        <h5>🔍 Code Breakdown:</h5>
+                        <p><span class="keyword">import Scene</span>: Brings in our Scene component (we'll create this
+                            next)</p>
+                        <p><span class="keyword">function App()</span>: Main component function - this is what renders
+                        </p>
+                        <p><span class="keyword">&lt;Scene /&gt;</span>: Renders our 3D scene component</p>
+                        <p><span class="keyword">export default</span>: Makes this component available to other files
+                        </p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">3</span>
+                        <h3>Create Scene Component</h3>
+                    </div>
+                    <span class="file-path">src/components/Scene.jsx</span>
+                    <p>Create a new folder called <code>components</code> in the <code>src</code> directory, then create
+                        this file. This component sets up our 3D scene.</p>
+
+                    <div class="code-container">
+                        <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                        <pre>import { Canvas } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
+import GroundPlane from './GroundPlane';
+
+function Scene() {
+  return (
+    &lt;Canvas camera={{ position: [0, 50, 100], fov: 60 }}&gt;
+      &lt;ambientLight intensity={0.5} /&gt;
+      &lt;directionalLight position={[10, 20, 10]} intensity={1} /&gt;
+      &lt;GroundPlane /&gt;
+      &lt;OrbitControls /&gt;
+    &lt;/Canvas&gt;
+  );
+}
+
+export default Scene;</pre>
+                    </div>
+
+                    <div class="explanation">
+                        <h5>🔍 Understanding Each Line:</h5>
+                        <p><span class="keyword">&lt;Canvas&gt;</span>: Creates the 3D scene container - this is where
+                            all 3D magic happens!</p>
+                        <p><span class="keyword">camera</span>: Sets camera position [x, y, z] and field of view (60
+                            degrees)</p>
+                        <p><span class="keyword">position: [0, 50, 100]</span>: Camera is at X=0, Y=50 (up), Z=100
+                            (back) - looking at origin</p>
+                        <p><span class="keyword">&lt;ambientLight&gt;</span>: Soft light that illuminates everything
+                            equally (like daylight)</p>
+                        <p><span class="keyword">intensity={0.5}</span>: Light brightness (0=dark, 1=full brightness)
+                        </p>
+                        <p><span class="keyword">&lt;directionalLight&gt;</span>: Strong light from one direction (like
+                            the sun)</p>
+                        <p><span class="keyword">&lt;OrbitControls&gt;</span>: Lets users rotate, zoom, and pan with
+                            mouse!</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">4</span>
+                        <h3>Create Ground Plane</h3>
+                    </div>
+                    <span class="file-path">src/components/GroundPlane.jsx</span>
+                    <p>This creates a flat ground surface so our 3D buildings have something to stand on.</p>
+
+                    <div class="code-container">
+                        <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                        <pre>function GroundPlane() {
+  return (
+    &lt;mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow&gt;
+      &lt;planeGeometry args={[200, 200]} /&gt;
+      &lt;meshStandardMaterial color="#e0e0e0" /&gt;
+    &lt;/mesh&gt;
+  );
+}
+
+export default GroundPlane;</pre>
+                    </div>
+
+                    <div class="explanation">
+                        <h5>🔍 What's happening here?</h5>
+                        <p><span class="keyword">&lt;mesh&gt;</span>: A 3D object = geometry (shape) + material
+                            (appearance)</p>
+                        <p><span class="keyword">rotation={[-Math.PI / 2, 0, 0]}</span>: Rotates plane 90° to make it
+                            horizontal (floor)</p>
+                        <p><span class="keyword">-Math.PI / 2</span>: That's -90 degrees in radians (Three.js uses
+                            radians)</p>
+                        <p><span class="keyword">receiveShadow</span>: This surface can receive shadows from other
+                            objects</p>
+                        <p><span class="keyword">&lt;planeGeometry args={[200, 200]}</span>: Creates a flat square
+                            200x200 units</p>
+                        <p><span class="keyword">&lt;meshStandardMaterial&gt;</span>: Gives the plane color and
+                            realistic lighting response</p>
+                        <p><span class="keyword">color="#e0e0e0"</span>: Light gray color (hex color code)</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">5</span>
+                        <h3>Add Sample GeoJSON Data</h3>
+                    </div>
+                    <span class="file-path">src/data/buildings.geojson</span>
+                    <p>Create a <code>data</code> folder in <code>src</code> and add this GeoJSON file with sample
+                        building data.</p>
+
+                    <div class="code-container">
+                        <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                        <pre>{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "height": 20 },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[0,0],[10,0],[10,10],[0,10],[0,0]]]
+      }
+    }
+  ]
+}</pre>
+                    </div>
+
+                    <div class="explanation">
+                        <h5>🔍 GeoJSON Structure Explained:</h5>
+                        <p><span class="keyword">"type": "FeatureCollection"</span>: Container for multiple geographic
+                            features</p>
+                        <p><span class="keyword">"features"</span>: Array of individual features (buildings, roads,
+                            etc.)</p>
+                        <p><span class="keyword">"Feature"</span>: Single geographic object with geometry and properties
+                        </p>
+                        <p><span class="keyword">"properties"</span>: Custom data - here we store building height (20
+                            units)</p>
+                        <p><span class="keyword">"geometry"</span>: The actual shape/location data</p>
+                        <p><span class="keyword">"type": "Polygon"</span>: Closed shape with area (perfect for
+                            buildings!)</p>
+                        <p><span class="keyword">"coordinates"</span>: Array of [x, y] points forming the polygon</p>
+                        <p><strong>Note:</strong> First and last points must be identical to close the polygon!</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">6</span>
+                        <h3>Update Scene to Load GeoJSON</h3>
+                    </div>
+                    <span class="file-path">src/components/Scene.jsx</span>
+                    <p>Now we'll modify our Scene to load the GeoJSON file and render buildings.</p>
+
+                    <div class="code-container">
+                        <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                        <pre>import { useEffect, useState } from 'react';
+import Building from './Building';
+import GroundPlane from './GroundPlane';
+import { Canvas } from '@react-three/fiber';
+import { OrbitControls } from '@react-three/drei';
+
+function Scene() {
+  const [features, setFeatures] = useState([]);
+
+  useEffect(() => {
+    fetch('/src/data/buildings.geojson')
+      .then(res =&gt; res.json())
+      .then(data =&gt; setFeatures(data.features));
+  }, []);
+
+  return (
+    &lt;Canvas camera={{ position: [0, 50, 100], fov: 60 }}&gt;
+      &lt;ambientLight intensity={0.5} /&gt;
+      &lt;directionalLight position={[10, 20, 10]} intensity={1} /&gt;
+      &lt;GroundPlane /&gt;
+      {features.map((feature, idx) =&gt; (
+        &lt;Building key={idx} feature={feature} /&gt;
+      ))}
+      &lt;OrbitControls /&gt;
+    &lt;/Canvas&gt;
+  );
+}
+
+export default Scene;</pre>
+                    </div>
+
+                    <div class="explanation">
+                        <h5>🔍 New Concepts:</h5>
+                        <p><span class="keyword">useState</span>: React hook to store component state (data that
+                            changes)</p>
+                        <p><span class="keyword">const [features, setFeatures]</span>: Creates state variable "features"
+                            and function to update it</p>
+                        <p><span class="keyword">useState([])</span>: Initial value is empty array</p>
+                        <p><span class="keyword">useEffect</span>: Runs code after component mounts (side effects)</p>
+                        <p><span class="keyword">fetch</span>: Loads the GeoJSON file from the specified path</p>
+                        <p><span class="keyword">.then(res =&gt; res.json())</span>: Converts response to JavaScript
+                            object</p>
+                        <p><span class="keyword">setFeatures(data.features)</span>: Updates state with GeoJSON features
+                        </p>
+                        <p><span class="keyword">[], []</span>: Empty dependency array - run once when component loads
+                        </p>
+                        <p><span class="keyword">features.map</span>: Loop through each feature and create a Building
+                            component</p>
+                        <p><span class="keyword">key={idx}</span>: Unique identifier for each Building (React
+                            requirement)</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">7</span>
+                        <h3>Create Building Component</h3>
+                    </div>
+                    <span class="file-path">src/components/Building.jsx</span>
+                    <p>This is where the magic happens! We convert 2D GeoJSON polygons into 3D buildings.</p>
+
+                    <div class="code-container">
+                        <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                        <pre>import * as THREE from 'three';
+
+function Building({ feature }) {
+  const { coordinates } = feature.geometry;
+  const height = feature.properties.height || 10;
+
+  // Convert GeoJSON polygon to THREE.Shape
+  const shape = new THREE.Shape();
+  coordinates[0].forEach(([x, y], i) =&gt; {
+    if (i === 0) shape.moveTo(x, y);
+    else shape.lineTo(x, y);
+  });
+
+  return (
+    &lt;mesh position={[0, 0, 0]}&gt;
+      &lt;extrudeGeometry args={[shape, { depth: height, bevelEnabled: false }]} /&gt;
+      &lt;meshStandardMaterial color="#8bc34a" /&gt;
+    &lt;/mesh&gt;
+  );
+}
+
+export default Building;</pre>
+                    </div>
+
+                    <div class="explanation">
+                        <h5>🔍 Deep Dive - How 2D Becomes 3D:</h5>
+                        <p><span class="keyword">import * as THREE</span>: Imports entire Three.js library as "THREE"
+                            object</p>
+                        <p><span class="keyword">{ feature }</span>: Destructures props - extracts feature from props
+                            object</p>
+                        <p><span class="keyword">feature.geometry.coordinates</span>: Gets array of [x,y] points from
+                            GeoJSON</p>
+                        <p><span class="keyword">feature.properties.height || 10</span>: Uses height property or
+                            defaults to 10</p>
+                        <p><span class="keyword">new THREE.Shape()</span>: Creates a 2D shape object (like a cookie
+                            cutter)</p>
+                        <p><span class="keyword">coordinates[0]</span>: First array is outer ring (GeoJSON can have
+                            holes)</p>
+                        <p><span class="keyword">forEach(([x, y], i)</span>: Loop through each coordinate point</p>
+                        <p><span class="keyword">shape.moveTo(x, y)</span>: Move to first point (don't draw yet)</p>
+                        <p><span class="keyword">shape.lineTo(x, y)</span>: Draw line from previous point to this point
+                        </p>
+                        <p><span class="keyword">&lt;extrudeGeometry&gt;</span>: Takes 2D shape and "pulls it up" to
+                            create 3D!</p>
+                        <p><span class="keyword">depth: height</span>: How far to extrude (building height)</p>
+                        <p><span class="keyword">bevelEnabled: false</span>: No rounded edges (keep it sharp)</p>
+                        <p><span class="keyword">color="#8bc34a"</span>: Nice green color for buildings</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">8</span>
+                        <h3>Style Your App</h3>
+                    </div>
+                    <span class="file-path">src/index.css</span>
+                    <p>Let's make it look professional with some CSS styling.</p>
+
+                    <div class="code-container">
+                        <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                        <pre>body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: #fafafa;
+}
+
+h1 {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(255,255,255,0.9);
+  padding: 12px 24px;
+  border-radius: 8px;
+  z-index: 10;
+  font-size: 1.5rem;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}</pre>
+                    </div>
+
+                    <div class="explanation">
+                        <h5>🔍 CSS Explained:</h5>
+                        <p><span class="keyword">margin: 0</span>: Remove default browser margins</p>
+                        <p><span class="keyword">position: absolute</span>: Takes h1 out of normal flow, position
+                            anywhere</p>
+                        <p><span class="keyword">z-index: 10</span>: Places title on top of canvas (higher = on top)</p>
+                        <p><span class="keyword">rgba(255,255,255,0.9)</span>: White background with 90% opacity
+                            (slightly see-through)</p>
+                        <p><span class="keyword">width: 100vw</span>: Full viewport width (100% of screen width)</p>
+                        <p><span class="keyword">height: 100vh</span>: Full viewport height (100% of screen height)</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-header">
+                        <span class="step-number">9</span>
+                        <h3>Run Your Project!</h3>
+                    </div>
+                    <p>Time to see your creation come to life! Start the development server:</p>
+
+                    <div class="code-container">
+                        <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                        <pre>npm run dev</pre>
+                    </div>
+
+                    <p style="margin-top: 1.5rem; font-size: 1.1rem;">Open your browser and navigate to
+                        <code>http://localhost:5173</code></p>
+
+                    <div class="example-box" style="margin-top: 1.5rem;">
+                        <strong>🎉 What you should see:</strong><br />
+                        - A 3D scene with a gray ground plane<br />
+                        - A green 3D building standing on the ground<br />
+                        - Click and drag to rotate the view<br />
+                        - Scroll to zoom in/out<br />
+                        - Right-click and drag to pan<br />
+                        <br />
+                        <strong>Congratulations! You've built your first 3D data visualizer! 🚀</strong>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>🎨 Customization Ideas</h2>
+                    <p style="font-size: 1.1rem; margin-bottom: 2rem;">Now that you have the basics, here are some ways
+                        to make your visualization more impressive for the contest:</p>
+
+                    <div class="concept-card">
+                        <h4>1. Color by Height</h4>
+                        <p>Make taller buildings a different color:</p>
+                        <div class="code-container">
+                            <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                            <pre>// In Building.jsx
+const color = height > 15 ? '#e74c3c' : '#8bc34a'; // Red if tall, green if short
+
+return (
+  &lt;mesh position={[0, 0, 0]}&gt;
+    &lt;extrudeGeometry args={[shape, { depth: height, bevelEnabled: false }]} /&gt;
+    &lt;meshStandardMaterial color={color} /&gt;
+  &lt;/mesh&gt;
+);</pre>
+                        </div>
+                    </div>
+
+                    <div class="concept-card">
+                        <h4>2. Add More Buildings</h4>
+                        <p>Expand your GeoJSON with multiple buildings:</p>
+                        <div class="code-container">
+                            <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                            <pre>{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "height": 20, "name": "Building A" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[0,0],[10,0],[10,10],[0,10],[0,0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "height": 30, "name": "Building B" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[15,0],[25,0],[25,10],[15,10],[15,0]]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "height": 15, "name": "Building C" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[0,15],[10,15],[10,25],[0,25],[0,15]]]
+      }
+    }
+  ]
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="concept-card">
+                        <h4>3. Add Hover Effects</h4>
+                        <p>Make buildings react when you hover over them:</p>
+                        <div class="code-container">
+                            <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                            <pre>// In Building.jsx
+import { useState } from 'react';
+
+function Building({ feature }) {
+  const [hovered, setHovered] = useState(false);
+  // ... rest of your code
+
+  return (
+    &lt;mesh 
+      position={[0, 0, 0]}
+      onPointerOver={() => setHovered(true)}
+      onPointerOut={() => setHovered(false)}
+    &gt;
+      &lt;extrudeGeometry args={[shape, { depth: height, bevelEnabled: false }]} /&gt;
+      &lt;meshStandardMaterial 
+        color={hovered ? '#ff0000' : '#8bc34a'} 
+      /&gt;
+    &lt;/mesh&gt;
+  );
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="concept-card">
+                        <h4>4. Add Animation</h4>
+                        <p>Make buildings grow from the ground:</p>
+                        <div class="code-container">
+                            <button class="copy-button" onclick="copyCode(this)">Copy</button>
+                            <pre>// In Building.jsx
+import { useRef } from 'react';
+import { useFrame } from '@react-three/fiber';
+
+function Building({ feature }) {
+  const meshRef = useRef();
+  const [scale, setScale] = useState(0);
+  
+  useFrame(() => {
+    if (scale < 1) {
+      setScale(prev => Math.min(prev + 0.02, 1));
+      meshRef.current.scale.y = scale;
+    }
+  });
+
+  return (
+    &lt;mesh ref={meshRef} position={[0, 0, 0]}&gt;
+      {/* ... rest of code */}
+    &lt;/mesh&gt;
+  );
+}</pre>
+                        </div>
+                    </div>
+
+                    <div class="concept-card">
+                        <h4>5. Different Data Sources</h4>
+                        <p>Try visualizing different types of data:</p>
+                        <ul style="margin-left: 1.5rem; color: #334155; line-height: 2;">
+                            <li><strong>Weather Data:</strong> Bars representing temperature/rainfall by city</li>
+                            <li><strong>Population Data:</strong> Height = population density</li>
+                            <li><strong>Sales Data:</strong> 3D bar charts showing sales by region</li>
+                            <li><strong>Real Estate:</strong> Property prices as building heights</li>
+                            <li><strong>COVID Data:</strong> Case numbers as 3D spikes on a map</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>🐛 Troubleshooting Common Issues</h2>
+
+                    <div class="concept-card">
+                        <h4>Issue: Black screen / Nothing renders</h4>
+                        <p><strong>Solution:</strong></p>
+                        <ul style="margin-left: 1.5rem; color: #334155;">
+                            <li>Check browser console for errors (F12)</li>
+                            <li>Make sure all files are in correct folders</li>
+                            <li>Verify imports are correct (check file paths)</li>
+                            <li>Ensure camera position is not inside an object</li>
+                        </ul>
+                    </div>
+
+                    <div class="concept-card">
+                        <h4>Issue: Buildings not showing</h4>
+                        <p><strong>Solution:</strong></p>
+                        <ul style="margin-left: 1.5rem; color: #334155;">
+                            <li>Check GeoJSON file path in fetch()</li>
+                            <li>Open Network tab in browser - is the file loading?</li>
+                            <li>Console.log(features) to see if data is loaded</li>
+                            <li>Try zooming out - buildings might be too small or far</li>
+                        </ul>
+                    </div>
+
+                    <div class="concept-card">
+                        <h4>Issue: Can't rotate/zoom</h4>
+                        <p><strong>Solution:</strong></p>
+                        <ul style="margin-left: 1.5rem; color: #334155;">
+                            <li>Make sure OrbitControls is imported from @react-three/drei</li>
+                            <li>OrbitControls must be inside &lt;Canvas&gt; tags</li>
+                            <li>Check that drei is installed: <code>npm install @react-three/drei</code></li>
+                        </ul>
+                    </div>
+
+                    <div class="concept-card">
+                        <h4>Issue: Performance is slow</h4>
+                        <p><strong>Solution:</strong></p>
+                        <ul style="margin-left: 1.5rem; color: #334155;">
+                            <li>Reduce number of buildings for testing</li>
+                            <li>Simplify geometry (fewer points in polygons)</li>
+                            <li>Use simpler materials</li>
+                            <li>Consider LOD (Level of Detail) for many objects</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="resources">
+                    <h3>💡 Tips for Winning the Contest</h3>
+                    <ul style="margin-left: 1.5rem; color: #334155; line-height: 2; font-size: 1.05rem;">
+                        <li><strong>Be Creative:</strong> Don't just copy - add your own twist!</li>
+                        <li><strong>Tell a Story:</strong> What does your visualization show? Add labels or
+                            descriptions.</li>
+                        <li><strong>Make it Interactive:</strong> Hover effects, click handlers, animations.</li>
+                        <li><strong>Color Matters:</strong> Use color schemes that make sense (hot=red, cold=blue).</li>
+                        <li><strong>Good Camera Work:</strong> When recording, show multiple angles and interactions.
+                        </li>
+                        <li><strong>Code Quality:</strong> Clean, commented code shows professionalism.</li>
+                        <li><strong>Document Your Process:</strong> Add a README explaining what you built and why.</li>
+                        <li><strong>Test Everything:</strong> Make sure it works smoothly before recording.</li>
+                    </ul>
+                </div>
+
+                <div class="resources">
+                    <h3>📚 Next Steps & Further Learning</h3>
+                    <a href="https://threejs.org/examples/" target="_blank">→ Three.js Examples Gallery</a>
+                    <a href="https://docs.pmnd.rs/react-three-fiber/getting-started/examples" target="_blank">→ React
+                        Three Fiber Examples</a>
+                    <a href="https://github.com/pmndrs/drei#readme" target="_blank">→ Drei Helper Components</a>
+                    <a href="https://discoverthreejs.com/" target="_blank">→ Discover Three.js Book</a>
+                    <a href="https://www.youtube.com/c/ThreeJSJourney" target="_blank">→ Three.js Journey (Video
+                        Course)</a>
+                    <a href="https://codesandbox.io/examples/package/react-three-fiber" target="_blank">→ Live Code
+                        Examples on CodeSandbox</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Data to Dimensions Workshop | Session by <a
+                href="https://www.linkedin.com/in/keerthana-m-g-12ba59256/" target="_blank">Keerthana M G</a></p>
+        <p style="margin-top: 1rem; opacity: 0.8;">Happy Coding! Transform data into dimensions. 🚀</p>
+    </footer>
+
+    <script>
+        function switchTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // Remove active class from all buttons
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active class to clicked button
+            event.target.classList.add('active');
+        }
+
+        function copyCode(button) {
+            const pre = button.nextElementSibling;
+            const code = pre.textContent;
+
+            navigator.clipboard.writeText(code).then(() => {
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                button.textContent = 'Failed';
+            });
+        }
+    </script>
+</body>
+
+</html>
